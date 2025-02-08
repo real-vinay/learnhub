@@ -1,6 +1,6 @@
 {
   "name": "lecture-player",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Video lecture player with subtitle support",
   "main": "main.js",
   "scripts": {
