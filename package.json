@@ -22,8 +22,8 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.lecturehub.app",
-    "productName": "LectureHub",
+    "appId": "com.learnhub.app",
+    "productName": "LearnHub",
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
