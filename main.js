@@ -3,7 +3,10 @@ const path = require("path");
 const Store = require("electron-store");
 const store = new Store();
 const UpdateHandler = require("./updater");
+const log = require("electron-log");
 let updateHandler;
+
+log.info("App starting...");
 
 let mainWindow;
 
@@ -42,7 +45,10 @@ function createWindow() {
     // Check for updates if online
     require("dns").lookup("github.com", (err) => {
       if (!err) {
+        log.info("Online, checking for updates...");
         updateHandler.checkForUpdates();
+      } else {
+        log.warn("Offline, skipping update check");
       }
     });
 
@@ -55,6 +61,7 @@ function createWindow() {
       });
     }, 6 * 60 * 60 * 1000);
   } catch (error) {
+    log.error("Error creating window:", error);
     console.error("Error creating window:", error);
   }
 }
