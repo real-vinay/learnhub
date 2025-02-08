@@ -1,8 +1,15 @@
-# Dependencies
+# Build output
 dist/
+build/
+out/
+
+# Dependencies
 node_modules/
 package-lock.json
+
+# Executables
 *.exe
+
 # Logs
 logs/
 *.log
