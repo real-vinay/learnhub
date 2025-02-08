@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder --publish never",
+    "build": "electron-builder publish always",
     "pack": "electron-builder --dir"
   },
   "dependencies": {
@@ -37,7 +37,7 @@
     "publish": {
       "provider": "github",
       "owner": "real-vinay",
-      "repo": "lecturehub",
+      "repo": "learnhub",
       "private": true,
       "releaseType": "release",
       "token": "%GH_TOKEN%"
