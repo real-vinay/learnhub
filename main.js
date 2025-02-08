@@ -42,24 +42,29 @@ function createWindow() {
     // Initialize updater after window creation
     updateHandler = new UpdateHandler(mainWindow);
 
-    // Check for updates if online
-    require("dns").lookup("github.com", (err) => {
-      if (!err) {
-        log.info("Online, checking for updates...");
-        updateHandler.checkForUpdates();
-      } else {
-        log.warn("Offline, skipping update check");
-      }
-    });
-
-    // Check for updates every 6 hours
-    setInterval(() => {
+    // Only check for updates in production builds
+    if (app.isPackaged) {
+      // Check for updates if online
       require("dns").lookup("github.com", (err) => {
         if (!err) {
+          log.info("Online, checking for updates...");
           updateHandler.checkForUpdates();
+        } else {
+          log.warn("Offline, skipping update check");
         }
       });
-    }, 6 * 60 * 60 * 1000);
+
+      // Check for updates every 6 hours
+      setInterval(() => {
+        require("dns").lookup("github.com", (err) => {
+          if (!err) {
+            updateHandler.checkForUpdates();
+          }
+        });
+      }, 6 * 60 * 60 * 1000);
+    } else {
+      log.info("Running in development mode - updates disabled");
+    }
   } catch (error) {
     log.error("Error creating window:", error);
     console.error("Error creating window:", error);

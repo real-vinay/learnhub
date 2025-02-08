@@ -6,8 +6,9 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder",
-    "pack": "electron-builder --dir"
+    "build": "electron-builder --publish never",
+    "dist": "electron-builder",
+    "publish": "electron-builder --publish always"
   },
   "dependencies": {
     "bootstrap": "^5.2.3",
@@ -25,14 +26,25 @@
     "appId": "com.learnhub.app",
     "productName": "LearnHub",
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "publish": [
+        "github"
+      ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "publish": {
       "provider": "github",
