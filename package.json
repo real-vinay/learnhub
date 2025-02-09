@@ -1,6 +1,6 @@
 {
   "name": "lecture-player",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Video lecture player with subtitle support",
   "main": "main.js",
   "scripts": {
@@ -46,16 +46,15 @@
       "createStartMenuShortcut": true,
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
-    "publish": {
-      "provider": "github",
-      "owner": "real-vinay",
-      "repo": "learnhub",
-      "private": true,
-      "releaseType": "release",
-      "token": "%GH_TOKEN%",
-      "publishAutoUpdate": true,
-      "protocol": "https"
-    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "real-vinay",
+        "repo": "learnhub",
+        "private": false,
+        "releaseType": "release"
+      }
+    ],
     "directories": {
       "buildResources": "build",
       "output": "dist"

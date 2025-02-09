@@ -1,5 +1,5 @@
 const { autoUpdater } = require("electron-updater");
-const { dialog } = require("electron");
+const { dialog, app } = require("electron"); // Add app import here
 const log = require("electron-log");
 
 // Configure logging with more details
@@ -16,6 +16,7 @@ class UpdateHandler {
     this.updateAvailable = false;
     this.updateDownloaded = false;
     this.setupAutoUpdater();
+    log.info("Current app version:", app.getVersion());
   }
 
   setupAutoUpdater() {
