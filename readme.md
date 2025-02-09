@@ -3,6 +3,7 @@
 ![Electron Version](https://img.shields.io/badge/Electron-23.0.0-blue.svg)
 ![Node Version](https://img.shields.io/badge/Node-20.9.0-green.svg)
 ![License](https://img.shields.io/badge/License-ISC-yellow.svg)
+[![Download Latest](https://img.shields.io/github/v/release/real-vinay/learnhub?label=Download%20Latest%20Release)](https://github.com/real-vinay/learnhub/releases/latest/download/LearnHub-Setup-1.0.0.exe)
 
 LearnHub is a modern Electron application designed to play video lectures with subtitle support. It features a sleek user interface, automatic updates, and various playback controls to enhance your learning experience.
 
@@ -73,6 +74,16 @@ npm run publish
 1. Go to the [Releases](https://github.com/real-vinay/learnhub/releases) page.
 2. Download the latest installer for your operating system.
 3. Run the installer and follow the on-screen instructions.
+
+## How to Use
+
+1. **Open the Application**: Launch LearnHub from your desktop or start menu.
+2. **Select a Folder**: Click on the "Select Folder" button to choose a folder containing your video lectures.
+3. **Search Videos**: Use the search bar to quickly find specific videos.
+4. **Play a Video**: Click on a video from the list to start playing.
+5. **Control Playback**: Use the playback controls to play/pause, mute/unmute, and enter fullscreen mode.
+6. **Mini-Player Mode**: Click the mini-player button to switch to a smaller, always-on-top player.
+7. **View History**: Check the history tab to see your recently watched videos.
 
 ## Keyboard Shortcuts
 
