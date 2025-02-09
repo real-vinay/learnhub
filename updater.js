@@ -15,6 +15,7 @@ class UpdateHandler {
     this.mainWindow = window;
     this.updateAvailable = false;
     this.updateDownloaded = false;
+    this.progressDialog = null;
     this.setupAutoUpdater();
     log.info("Current app version:", app.getVersion());
   }
@@ -23,7 +24,10 @@ class UpdateHandler {
     // Log important auto-updater events
     autoUpdater.on("checking-for-update", () => {
       log.info("Checking for updates...");
-      this.sendStatusToWindow("Checking for updates...");
+      this.sendStatusToWindow({
+        message: "Checking for updates...",
+        type: "status",
+      });
     });
 
     autoUpdater.on("update-available", (info) => {
@@ -50,15 +54,44 @@ class UpdateHandler {
 
     autoUpdater.on("update-not-available", () => {
       log.info("No updates available");
-      this.sendStatusToWindow("You are using the latest version.");
+      this.sendStatusToWindow({
+        message: "You are using the latest version.",
+        type: "status",
+      });
     });
 
     autoUpdater.on("download-progress", (progressObj) => {
-      const message = `Downloading update... ${Math.round(
-        progressObj.percent
-      )}%`;
-      log.info(message);
-      this.sendStatusToWindow(message);
+      const percent = Math.round(progressObj.percent);
+      log.info(`Download progress: ${percent}%`);
+
+      if (!this.progressDialog) {
+        this.progressDialog = dialog.showMessageBox(this.mainWindow, {
+          type: "info",
+          title: "Downloading Update",
+          message: "Downloading update...",
+          detail: `Downloaded ${percent}% (${Math.round(
+            progressObj.transferred / 1024 / 1024
+          )}MB of ${Math.round(progressObj.total / 1024 / 1024)}MB)`,
+          buttons: ["Hide"],
+          noLink: true,
+          cancelId: 0,
+        });
+      } else {
+        // Update existing dialog
+        dialog.showMessageBox(this.mainWindow, {
+          type: "info",
+          title: "Downloading Update",
+          message: "Downloading update...",
+          detail: `Downloaded ${percent}% (${Math.round(
+            progressObj.transferred / 1024 / 1024
+          )}MB of ${Math.round(progressObj.total / 1024 / 1024)}MB)`,
+          buttons: ["Hide"],
+          noLink: true,
+          cancelId: 0,
+        });
+      }
+
+      // Update taskbar progress
       this.mainWindow.setProgressBar(progressObj.percent / 100);
     });
 
@@ -66,6 +99,15 @@ class UpdateHandler {
       log.info("Update downloaded");
       this.updateDownloaded = true;
       this.mainWindow.setProgressBar(-1); // Remove progress bar
+      this.sendStatusToWindow({
+        message: "Update ready to install",
+        progress: 100,
+        type: "complete",
+      });
+
+      if (this.progressDialog) {
+        this.progressDialog = null;
+      }
 
       dialog
         .showMessageBox(this.mainWindow, {
@@ -134,9 +176,9 @@ class UpdateHandler {
       });
   }
 
-  sendStatusToWindow(message) {
-    log.info("Status:", message);
-    this.mainWindow.webContents.send("update-status", message);
+  sendStatusToWindow(data) {
+    log.info("Status:", data);
+    this.mainWindow.webContents.send("update-status", data);
   }
 
   checkForUpdates() {

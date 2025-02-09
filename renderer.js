@@ -106,6 +106,29 @@ function setupEventListeners() {
       updateStatus.textContent = message;
     }
   });
+
+  // Update status handler with progress
+  ipcRenderer.on("update-status", (_, data) => {
+    const updateStatus = document.getElementById("updateStatus");
+    const progressBar = document.getElementById("updateProgressBar");
+    const progressContainer = progressBar.parentElement;
+
+    if (updateStatus) {
+      updateStatus.textContent = data.message;
+
+      if (data.type === "progress") {
+        progressContainer.classList.remove("d-none");
+        progressBar.style.width = `${data.progress}%`;
+      } else if (data.type === "complete") {
+        progressBar.style.width = "100%";
+        setTimeout(() => {
+          progressContainer.classList.add("d-none");
+        }, 3000);
+      } else {
+        progressContainer.classList.add("d-none");
+      }
+    }
+  });
 }
 
 function setupDragAndDrop() {

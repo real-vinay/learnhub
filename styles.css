@@ -333,3 +333,13 @@ kbd {
   background-color: #ff0000;
   color: var(--yt-text);
 }
+
+/* Remove these classes as they're no longer needed */
+.update-progress,
+.update-progress .progress-bar {
+  display: none;
+}
+
+.update-status {
+  min-height: 24px;
+}
