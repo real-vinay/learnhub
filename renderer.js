@@ -10,6 +10,38 @@ let currentFolder;
 let currentVideo;
 let currentVideoIndex = -1;
 
+class SubtitleCache {
+  constructor() {
+    this.cache = new Map();
+  }
+
+  async get(videoName, srtPath) {
+    const cacheKey = `${videoName}_srt`;
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey);
+    }
+
+    const vttContent = await convertSrtToVtt(srtPath);
+    if (vttContent) {
+      const blob = new Blob([vttContent], { type: "text/vtt" });
+      const vttUrl = URL.createObjectURL(blob);
+      this.cache.set(cacheKey, vttUrl);
+      return vttUrl;
+    }
+    return null;
+  }
+
+  clear(videoName) {
+    const cacheKey = `${videoName}_srt`;
+    if (this.cache.has(cacheKey)) {
+      URL.revokeObjectURL(this.cache.get(cacheKey));
+      this.cache.delete(cacheKey);
+    }
+  }
+}
+
+const subtitleCache = new SubtitleCache();
+
 function initializePlayer() {
   // Check if videojs is available
   if (typeof videojs === "undefined") {
@@ -49,6 +81,7 @@ function setupEventListeners() {
 
   selectFolderBtn.addEventListener("click", async () => {
     try {
+      cleanupSubtitleCache();
       const folderPath = await ipcRenderer.invoke("select-folder");
       if (folderPath) {
         currentFolder = folderPath;
@@ -303,6 +336,27 @@ async function generateThumbnail(videoPath) {
   });
 }
 
+async function convertSrtToVtt(srtPath) {
+  try {
+    const srtContent = await ipcRenderer.invoke("read-subtitle-file", srtPath);
+    if (!srtContent) return null;
+
+    // Add WebVTT header
+    let vttContent = "WEBVTT\n\n";
+
+    // Convert SRT content to VTT format
+    vttContent += srtContent
+      .replace(/(\d{2}):(\d{2}):(\d{2}),(\d{3})/g, "$1:$2:$3.$4")
+      .replace(/\r\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n");
+
+    return vttContent;
+  } catch (error) {
+    console.error("Error converting SRT to VTT:", error);
+    return null;
+  }
+}
+
 async function loadVideoList(folderPath) {
   try {
     const videos = await ipcRenderer.invoke("get-videos", folderPath);
@@ -314,6 +368,18 @@ async function loadVideoList(folderPath) {
         '<div class="alert alert-info">No video files found in this folder</div>';
       return;
     }
+
+    // Preload subtitles for all videos
+    videos.forEach(async (video) => {
+      const baseFilename = video.replace(/\.[^/.]+$/, "");
+      const srtPath = `${folderPath}/${baseFilename}.srt`;
+
+      // Check if SRT exists and preload it
+      const srtExists = await ipcRenderer.invoke("check-file-exists", srtPath);
+      if (srtExists) {
+        subtitleCache.get(video, srtPath); // Start conversion in background
+      }
+    });
 
     // Create and append video items
     for (const video of videos) {
@@ -450,7 +516,7 @@ function playNextVideo() {
   }
 }
 
-function loadVideo(videoName) {
+async function loadVideo(videoName) {
   try {
     currentVideo = videoName;
     const videoPath = `file://${currentFolder}/${videoName}`;
@@ -480,44 +546,56 @@ function loadVideo(videoName) {
     });
 
     // Handle subtitles
-    const subtitlePath = `file://${currentFolder}/${videoName.replace(
-      /\.[^/.]+$/,
-      ".vtt"
-    )}`;
+    const baseFilename = videoName.replace(/\.[^/.]+$/, "");
+    const vttPath = `${currentFolder}/${baseFilename}.vtt`;
+    const srtPath = `${currentFolder}/${baseFilename}.srt`;
 
     // Remove existing tracks
     while (player.remoteTextTracks().length > 0) {
       player.removeRemoteTextTrack(player.remoteTextTracks()[0]);
     }
 
-    // Add new subtitle track
-    fetch(subtitlePath.replace("file://", ""))
-      .then((response) => {
-        if (response.ok) {
-          player.addRemoteTextTrack(
-            {
-              kind: "subtitles",
-              src: subtitlePath,
-              srclang: "en",
-              label: "English",
-              default: true,
-            },
-            false
-          );
-          metadata[videoName].subtitlesAvailable = true;
-          store.set("metadata", metadata);
-        } else {
-          metadata[videoName].subtitlesAvailable = false;
-          store.set("metadata", metadata);
-        }
-      })
-      .catch(() => {
-        metadata[videoName].subtitlesAvailable = false;
-        store.set("metadata", metadata);
-      })
-      .finally(() => {
-        updateVideoInfo(videoName);
-      });
+    // Use Promise.race to get the fastest available subtitle source
+    const [vttResponse, srtExists] = await Promise.all([
+      fetch(vttPath.replace("file://", "")).catch(() => null),
+      ipcRenderer.invoke("check-file-exists", srtPath),
+    ]);
+
+    if (vttResponse && vttResponse.ok) {
+      // VTT file exists, use it directly
+      player.addRemoteTextTrack(
+        {
+          kind: "subtitles",
+          src: `file://${vttPath}`,
+          srclang: "en",
+          label: "English",
+          default: true,
+        },
+        false
+      );
+      metadata[videoName].subtitlesAvailable = true;
+    } else if (srtExists) {
+      // Try to get cached VTT first
+      const cachedVttUrl = await subtitleCache.get(videoName, srtPath);
+      if (cachedVttUrl) {
+        player.addRemoteTextTrack(
+          {
+            kind: "subtitles",
+            src: cachedVttUrl,
+            srclang: "en",
+            label: "English",
+            default: true,
+          },
+          false
+        );
+        metadata[videoName].subtitlesAvailable = true;
+      }
+    } else {
+      metadata[videoName].subtitlesAvailable = false;
+    }
+
+    store.set("metadata", metadata);
+    updateVideoInfo(videoName);
 
     // Add error handling for video loading
     player.on("error", function (e) {
@@ -587,6 +665,14 @@ function getVideoType(filename) {
     avi: "video/x-msvideo",
   };
   return types[ext] || "video/mp4";
+}
+
+function cleanupSubtitleCache() {
+  const videos = Array.from(
+    document.querySelectorAll("#videoList .video-item")
+  ).map((item) => item.querySelector(".video-title").textContent);
+
+  videos.forEach((video) => subtitleCache.clear(video));
 }
 
 document.addEventListener("DOMContentLoaded", () => {

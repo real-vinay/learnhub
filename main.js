@@ -152,6 +152,25 @@ ipcMain.handle("quit-and-install", () => {
   updateHandler.quitAndInstall();
 });
 
+// Add these new IPC handlers before the final error handler
+ipcMain.handle("read-subtitle-file", async (event, filePath) => {
+  try {
+    return await require("fs").promises.readFile(filePath, "utf-8");
+  } catch (error) {
+    console.error("Error reading subtitle file:", error);
+    return null;
+  }
+});
+
+ipcMain.handle("check-file-exists", async (event, filePath) => {
+  try {
+    await require("fs").promises.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
 // Handle any uncaught errors
 process.on("uncaughtException", (error) => {
   console.error("Uncaught exception:", error);
