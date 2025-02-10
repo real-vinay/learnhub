@@ -20,8 +20,9 @@ LearnHub is a modern Electron application designed to play video lectures with s
 
 ## Screenshots
 
-![Screenshot 1](path/to/screenshot1.png)
-![Screenshot 2](path/to/screenshot2.png)
+![learnhub screenshot 1](https://github.com/user-attachments/assets/6b0c6217-7719-49de-8c42-e4c246323d54)
+![learnhub screenshot 2](https://github.com/user-attachments/assets/1cf552fa-b69b-4810-8eed-49fa411c5aa6)
+
 
 ## Installation
 
@@ -98,13 +99,8 @@ npm run publish
 
 | Version | Changes                                     |
 | ------- | ------------------------------------------- |
-| 1.0.7   | Added progress bar for update downloads     |
-| 1.0.6   | Improved update handling and error messages |
-| 1.0.5   | Added automatic update feature              |
-| 1.0.4   | Improved video playback controls            |
-| 1.0.3   | Added subtitle support                      |
-| 1.0.2   | Improved UI and added search functionality  |
 | 1.0.1   | Initial release with basic video playback   |
+| 1.1.0   | Added .srt subtitle support                 |
 
 ## Contributing
 
