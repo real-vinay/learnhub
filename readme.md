@@ -3,7 +3,7 @@
 ![Electron Version](https://img.shields.io/badge/Electron-23.0.0-blue.svg)
 ![Node Version](https://img.shields.io/badge/Node-20.9.0-green.svg)
 ![License](https://img.shields.io/badge/License-ISC-yellow.svg)
-[![Download Latest](https://img.shields.io/github/v/release/real-vinay/learnhub?label=Download%20Latest%20Release)](https://github.com/real-vinay/learnhub/releases/latest/download/LearnHub-Setup-1.0.0.exe)
+[![Download Latest](https://img.shields.io/github/v/release/real-vinay/learnhub?label=Download%20Latest%20Release)](https://github.com/real-vinay/learnhub/releases/latest/download/LearnHub-Setup-1.1.1.exe)
 
 LearnHub is a modern Electron application designed to play video lectures with subtitle support. It features a sleek user interface, automatic updates, and various playback controls to enhance your learning experience.
 
