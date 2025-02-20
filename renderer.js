@@ -143,24 +143,14 @@ function setupEventListeners() {
   // Update status handler with progress
   ipcRenderer.on("update-status", (_, data) => {
     const updateStatus = document.getElementById("updateStatus");
-    const progressBar = document.getElementById("updateProgressBar");
-    const progressContainer = progressBar.parentElement;
+    if (!updateStatus) return;
 
-    if (updateStatus) {
-      updateStatus.textContent = data.message;
-
-      if (data.type === "progress") {
-        progressContainer.classList.remove("d-none");
-        progressBar.style.width = `${data.progress}%`;
-      } else if (data.type === "complete") {
-        progressBar.style.width = "100%";
-        setTimeout(() => {
-          progressContainer.classList.add("d-none");
-        }, 3000);
-      } else {
-        progressContainer.classList.add("d-none");
-      }
+    if (typeof data === "string") {
+      updateStatus.textContent = data;
+      return;
     }
+
+    updateStatus.textContent = data.message;
   });
 }
 
@@ -344,15 +334,20 @@ async function convertSrtToVtt(srtPath) {
     // Add WebVTT header
     let vttContent = "WEBVTT\n\n";
 
-    // Convert SRT content to VTT format
-    vttContent += srtContent
-      .replace(/(\d{2}):(\d{2}):(\d{2}),(\d{3})/g, "$1:$2:$3.$4")
-      .replace(/\r\n/g, "\n")
-      .replace(/\n{3,}/g, "\n\n");
+    // Convert SRT content to VTT format with error checking
+    try {
+      vttContent += srtContent
+        .replace(/(\d{2}):(\d{2}):(\d{2}),(\d{3})/g, "$1:$2:$3.$4")
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n");
+    } catch (error) {
+      console.error("Error converting SRT format:", error);
+      return null;
+    }
 
     return vttContent;
   } catch (error) {
-    console.error("Error converting SRT to VTT:", error);
+    console.error("Error reading subtitle file:", error);
     return null;
   }
 }
@@ -555,33 +550,19 @@ async function loadVideo(videoName) {
       player.removeRemoteTextTrack(player.remoteTextTracks()[0]);
     }
 
-    // Use Promise.race to get the fastest available subtitle source
-    const [vttResponse, srtExists] = await Promise.all([
-      fetch(vttPath.replace("file://", "")).catch(() => null),
-      ipcRenderer.invoke("check-file-exists", srtPath),
-    ]);
+    try {
+      // Use Promise.race to get the fastest available subtitle source
+      const [vttResponse, srtExists] = await Promise.all([
+        fetch(vttPath.replace("file://", "")).catch(() => null),
+        ipcRenderer.invoke("check-file-exists", srtPath),
+      ]);
 
-    if (vttResponse && vttResponse.ok) {
-      // VTT file exists, use it directly
-      player.addRemoteTextTrack(
-        {
-          kind: "subtitles",
-          src: `file://${vttPath}`,
-          srclang: "en",
-          label: "English",
-          default: true,
-        },
-        false
-      );
-      metadata[videoName].subtitlesAvailable = true;
-    } else if (srtExists) {
-      // Try to get cached VTT first
-      const cachedVttUrl = await subtitleCache.get(videoName, srtPath);
-      if (cachedVttUrl) {
+      if (vttResponse && vttResponse.ok) {
+        // VTT file exists, use it directly
         player.addRemoteTextTrack(
           {
             kind: "subtitles",
-            src: cachedVttUrl,
+            src: `file://${vttPath}`,
             srclang: "en",
             label: "English",
             default: true,
@@ -589,8 +570,29 @@ async function loadVideo(videoName) {
           false
         );
         metadata[videoName].subtitlesAvailable = true;
+      } else if (srtExists) {
+        // Try to get cached Vtt first
+        const cachedVttUrl = await subtitleCache.get(videoName, srtPath);
+        if (cachedVttUrl) {
+          player.addRemoteTextTrack(
+            {
+              kind: "subtitles",
+              src: cachedVttUrl,
+              srclang: "en",
+              label: "English",
+              default: true,
+            },
+            false
+          );
+          metadata[videoName].subtitlesAvailable = true;
+        } else {
+          metadata[videoName].subtitlesAvailable = false;
+        }
+      } else {
+        metadata[videoName].subtitlesAvailable = false;
       }
-    } else {
+    } catch (error) {
+      console.error("Error handling subtitles:", error);
       metadata[videoName].subtitlesAvailable = false;
     }
 
